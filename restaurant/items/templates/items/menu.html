@@ -1,0 +1,171 @@
+{% extends 'layout.html' %}
+{% load static %}
+
+{% block title %}Menu{% endblock %}
+
+{% block content %}
+<div class="container-fluid mx-auto flex text-light">
+    <div class="row">
+        <div class="btn-group col col-8 p-3">
+            <a href="{% url 'items:menu' %}" class="btn btn-primary {% if request.path == '/items/menu/' %}active{% endif %}">All</a>
+            <a href="{% url 'items:menu_by_category' 'mini-pizza' %}" class="btn btn-primary {% if request.path == '/items/menu/mini-pizza/' %}active{% endif %}" aria-current="page">Mini Pizza</a>
+            <a href="{% url 'items:menu_by_category' 'calzone' %}" class="btn btn-primary {% if request.path == '/items/menu/calzone/' %}active{% endif %}">Calzone</a>
+            <a href="{% url 'items:menu_by_category' 'drinks' %}" class="btn btn-primary {% if request.path == '/items/menu/drinks/' %}active{% endif %}">Drinks</a>
+        </div>
+        <div class="col col-8 bg-secondary rounded" style="min-height: 75vh;"> 
+            <div class="d-flex flex-wrap justify-content-around align-content-around">
+                {% for item in items %}
+                <div class="card my-3 shadow-lg" style="width: 12rem;">
+                    <img src="{{ item.image.url }}" class="card-img-top" alt="{{ item.name }}">
+                    <button type="button" class="btn btn-success" onclick="addToOrder({{ item.id }}, '{{ item.name }}', {{ item.price }})">+ ${{ item.price }}</button>
+                    <div class="card-body text-center">
+                        <h5 class="card-title">{{ item.name }}</h5>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="col col-4 bg-secondary rounded border-start border-light" style="min-height: 75vh;">
+            <div class="container bg-secondary h-75 m-0 p-3">
+                <h3>Current Order</h3>
+                <hr>
+                <div class="container">
+                  <ul id="order-list" class="list-group">
+                    <!-- Order items will be appended here -->
+                    {% for order_item in order_items %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                      <div class="btn-group" role="group" aria-label="Basic mixed styles example">
+                        <button type="button" class="btn btn-danger" onclick="updateItemCount('{{ order_item.name }}', -1)">-</button>
+                        <button type="button" class="btn btn-light" disabled>{{ order_item.count }}</button>
+                        <button type="button" class="btn btn-success" onclick="updateItemCount('{{ order_item.name }}', 1)">+</button>
+                      </div>
+                      {{ order_item.name }}
+                      <span class="badge bg-primary rounded-pill">${{ order_item.total_price }}</span>
+                    </li>
+                    {% endfor %}
+                  </ul>
+                </div>
+              </div>
+              <div class="container bg-secondary h-25 p-3 border-top border-light">
+                <div class="fs-3" id="total">Total: ${{ total_price }}</div>
+                <form id="order-form" method="post" action="{% url 'orders:order_create' %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="order_data" id="order-data">
+                  <button type="submit" class="btn btn-primary w-100">Submit Order</button>
+                </form>
+              </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const orderData = document.getElementById('order-data');
+        const initialOrderItems = {{ order_items|json_script:"order-items" }};
+        orderData.value = JSON.stringify(initialOrderItems);
+    });
+</script>
+<script>
+    function addToOrder(item_id, item_name, item_price) {
+        const orderData = document.getElementById('order-data');
+        let orderItems = [];
+
+        if (orderData.value) {
+            try {
+                orderItems = JSON.parse(orderData.value);
+            } catch (e) {
+                console.error("Error parsing order data:", e);
+            }
+        }
+
+        const existingItem = orderItems.find(item => item.item_id === item_id);
+
+        if (existingItem) {
+            existingItem.item_quantity += 1;
+        } else {
+            orderItems.push({ item_id, item_name, item_price, item_quantity: 1 });
+        }
+
+        orderData.value = JSON.stringify(orderItems);
+        updateOrderList(orderItems);
+        updateTotal(orderItems);
+    }
+</script>
+<script>
+    function updateItemCount(item_name, count) {
+        const orderData = document.getElementById('order-data');
+        const orderItems = JSON.parse(orderData.value);
+        const item = orderItems.find(item => item.item_name === item_name);
+
+        if (item) {
+            item.item_quantity += count;
+            if (item.item_quantity <= 0) {
+                const index = orderItems.indexOf(item);
+                orderItems.splice(index, 1);
+            }
+        }
+
+        orderData.value = JSON.stringify(orderItems);
+        updateOrderList(orderItems);
+        updateTotal(orderItems);
+    }
+</script>
+<script>
+    function updateOrderList(orderItems) {
+        const orderList = document.getElementById('order-list');
+        orderList.innerHTML = '';
+
+        orderItems.forEach(orderItem => {
+            const listItem = document.createElement('li');
+            listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+
+            const btnGroup = document.createElement('div');
+            btnGroup.className = 'btn-group';
+            btnGroup.role = 'group';
+            btnGroup.ariaLabel = 'Basic mixed styles example';
+
+            const minusButton = document.createElement('button');
+            minusButton.type = 'button';
+            minusButton.className = 'btn btn-danger';
+            minusButton.textContent = '-';
+            minusButton.onclick = () => updateItemCount(orderItem.item_name, -1);
+
+            const countButton = document.createElement('button');
+            countButton.type = 'button';
+            countButton.className = 'btn btn-light';
+            countButton.disabled = true;
+            countButton.textContent = orderItem.item_quantity;
+
+            const plusButton = document.createElement('button');
+            plusButton.type = 'button';
+            plusButton.className = 'btn btn-success';
+            plusButton.textContent = '+';
+            plusButton.onclick = () => updateItemCount(orderItem.item_name, 1);
+
+            btnGroup.appendChild(minusButton);
+            btnGroup.appendChild(countButton);
+            btnGroup.appendChild(plusButton);
+
+            const itemName = document.createElement('span');
+            itemName.textContent = orderItem.item_name;
+
+            const itemPrice = document.createElement('span');
+            itemPrice.className = 'badge bg-primary rounded-pill';
+            itemPrice.textContent = `$${(orderItem.item_price * orderItem.item_quantity).toFixed(2)}`;
+
+            listItem.appendChild(btnGroup);
+            listItem.appendChild(itemName);
+            listItem.appendChild(itemPrice);
+
+            orderList.appendChild(listItem);
+        });
+    }
+</script>
+<script>
+    function updateTotal(orderItems) {
+        const totalElement = document.getElementById('total');
+        const total = orderItems.reduce((sum, item) => sum + item.item_price * item.item_quantity, 0);
+        totalElement.textContent = `Total: $${total.toFixed(2)}`;
+    }
+</script>
+{% endblock %}

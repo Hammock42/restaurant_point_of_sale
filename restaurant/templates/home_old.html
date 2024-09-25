@@ -1,0 +1,174 @@
+{% extends 'layout.html' %}
+{% load static %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+  <div class="container-fluid text-light">
+    <div class="row h-100">
+      <div class="col col-8 bg-secondary rounded">
+        <div class="d-flex flex-wrap justify-content-around align-content-around">
+          {% for item in items %}
+          <div class="card my-3 shadow-lg" style="width: 12rem;">
+            <img src="{{ item.image.url }}" class="card-img-top" alt="{{ item.name }}">
+            <button type="button" class="btn btn-success" onclick="addToOrder('{{ item.name }}', {{ item.price }}, {{ item.pk }})">+ ${{ item.price }}</button>
+            <div class="card-body">
+              <h5 class="card-title">{{ item.name }}</h5>
+              <p class="card-text">{{ item.description }}</p>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="col col-4 rounded bg-secondary border-start border-light">
+        <div class="container bg-secondary h-75 m-0 p-3">
+          <h3>Current Order</h3>
+          <hr>
+          <div class="container">
+            <ul id="order-list" class="list-group">
+              <!-- Order items will be appended here -->
+              {% for order_item in order_items %}
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div class="btn-group" role="group" aria-label="Basic mixed styles example">
+                  <button type="button" class="btn btn-danger" onclick="updateItemCount('{{ order_item.name }}', -1)">-</button>
+                  <button type="button" class="btn btn-light" disabled>{{ order_item.count }}</button>
+                  <button type="button" class="btn btn-success" onclick="updateItemCount('{{ order_item.name }}', 1)">+</button>
+                </div>
+                {{ order_item.name }}
+                <span class="badge bg-primary rounded-pill">${{ order_item.total_price }}</span>
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+        <div class="container bg-secondary h-25 p-3 border-top border-light">
+          <div class="fs-3" id="total">Total: ${{ total_price }}</div>
+          <form id="order-form" method="post" action="{% url 'orders:create_order' %}">
+            {% csrf_token %}
+            <input type="hidden" name="order_data" id="order-data">
+            <button type="submit" class="btn btn-primary w-100" onclick="submitOrder()">Submit Order</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function addToOrder(item, price, pk) {
+      const orderList = document.getElementById('order-list');
+      let itemExists = false;
+
+      for (let listItem of orderList.children) {
+      if (listItem.textContent.includes(item)) {
+        itemExists = true;
+        const countElement = listItem.querySelector('.btn-light');
+        const newCount = parseInt(countElement.textContent) + 1;
+        countElement.textContent = newCount;
+
+        const priceElement = listItem.querySelector('.badge');
+        const newTotalPrice = (price * newCount).toFixed(2);
+        priceElement.textContent = `$${newTotalPrice}`;
+
+        updateTotal(price);
+        break;
+      }
+      }
+
+      if (!itemExists) {
+      const listItem = document.createElement('li');
+      listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+
+      const btnGroup = document.createElement('div');
+      btnGroup.className = 'btn-group';
+      btnGroup.role = 'group';
+      btnGroup.ariaLabel = 'Basic mixed styles example';
+
+      const decrementBtn = document.createElement('button');
+      decrementBtn.type = 'button';
+      decrementBtn.className = 'btn btn-danger';
+      decrementBtn.textContent = '-';
+      decrementBtn.onclick = () => updateItemCount(item, -1);
+
+      const countBtn = document.createElement('button');
+      countBtn.type = 'button';
+      countBtn.className = 'btn btn-light';
+      countBtn.textContent = '1';
+      countBtn.disabled = true;
+
+      const incrementBtn = document.createElement('button');
+      incrementBtn.type = 'button';
+      incrementBtn.className = 'btn btn-success';
+      incrementBtn.textContent = '+';
+      incrementBtn.onclick = () => updateItemCount(item, 1);
+
+      btnGroup.appendChild(decrementBtn);
+      btnGroup.appendChild(countBtn);
+      btnGroup.appendChild(incrementBtn);
+
+      const itemName = document.createTextNode(item);
+
+      const itemPrice = document.createElement('span');
+      itemPrice.className = 'badge bg-primary rounded-pill';
+      itemPrice.textContent = `$${price.toFixed(2)}`;
+
+      const itemPk = document.createElement('input');
+      itemPk.type = 'hidden';
+      itemPk.value = pk;
+
+      listItem.appendChild(btnGroup);
+      listItem.appendChild(itemName);
+      listItem.appendChild(itemPrice);
+      listItem.appendChild(itemPk);
+
+      orderList.appendChild(listItem);
+
+      updateTotal(price);
+      }
+    }
+
+    function updateTotal(price) {
+      const totalElement = document.getElementById('total');
+      let currentTotal = parseFloat(totalElement.textContent.replace('Total: $', '')) || 0;
+      currentTotal += price;
+      totalElement.textContent = `Total: $${currentTotal.toFixed(2)}`;
+    }
+
+    function updateItemCount(item, count) {
+      const items = document.getElementById('order-list').children;
+      for (let listItem of items) {
+        if (listItem.textContent.includes(item)) {
+          const countElement = listItem.querySelector('.btn-light');
+          const newCount = parseInt(countElement.textContent) + count;
+          if (newCount <= 0) {
+            updateTotal(-parseFloat(listItem.querySelector('.badge').textContent.replace('$', '')));
+            listItem.remove();
+            return;
+          }
+          countElement.textContent = newCount;
+
+          const priceElement = listItem.querySelector('.badge');
+          const price = parseFloat(priceElement.textContent.replace('$', '')) / (newCount - count);
+          priceElement.textContent = `$${(price * newCount).toFixed(2)}`;
+
+          updateTotal(price * count);
+          break;
+        }
+      }
+    }
+
+    function submitOrder() {
+      const orderItems = [];
+      const items = document.getElementById('order-list').children;
+      for (let listItem of items) {
+        const count = parseInt(listItem.querySelector('.btn-light').textContent);
+        const item_id = listItem.querySelector('input').value;
+        const temp_order_item = { item_id: item_id, count: count };
+        orderItems.push(temp_order_item);
+      }
+      const total_price = parseFloat(document.getElementById('total').textContent.replace('Total: $', ''));
+      const orderData = { order_items: orderItems, total_price: parseFloat(document.getElementById('total').textContent.replace('Total: $', '')) };
+      document.getElementById('order-data').value = JSON.stringify(orderData);
+      document.getElementById('order-form').submit();
+    }
+  </script>
+{% endblock %}

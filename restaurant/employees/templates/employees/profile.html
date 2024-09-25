@@ -1,0 +1,17 @@
+{% extends 'layout.html' %}
+{% load static %}
+
+{% block title %}Profile{% endblock %}
+
+{% block content %}
+<div class="container text-light">
+    <h1>Employee Profile</h1>
+    <div class="profile-info">
+        <p><strong>Name:</strong> {{ employee.name }}</p>
+        <p><strong>Position:</strong> {{ employee.position }}</p>
+        <p><strong>Email:</strong> {{ employee.email }}</p>
+        <p><strong>Phone:</strong> {{ employee.phone }}</p>
+        <p><strong>Address:</strong> {{ employee.address }}</p>
+    </div>
+</div>
+{% endblock %}

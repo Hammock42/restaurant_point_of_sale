@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+{% load django_bootstrap5 %}
+{% load static %}
+{% load bootstrap_icons %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %}</title>
+    {% bootstrap_css %}
+    {% bootstrap_javascript %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body class="bg-dark h-100">
+    <div class="container-fluid py-3">
+        <div class="row align-items-center h-100">
+            <div class="col col-1 align-items-center">
+                <ul class="nav flex-column justify-content-around align-items-center" style="min-height: 75vh;">
+                    <li>
+                      <p class="text-light">Name</p>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link {% if request.path == '/' %}active{% endif %}" aria-current="page" href="{% url 'home' %}">
+                        <span role="img" aria-label="Home" title="Home">{% bs_icon 'house' size='2em' %}</span>
+                      </a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link {% if request.path == '/items/menu' %}active{% endif %}" href="{% url 'items:menu' %}">
+                        <span role="img" aria-label="Order Menu" title="Order Menu">{% bs_icon 'border-all' size='2em' %}</span>
+                      </a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link {% if request.path == '/dashboard/' %}active{% endif %}" href="{% url 'dashboard' %}">
+                        <span role="img" aria-label="Dashboard" title="Dashboard">{% bs_icon 'clipboard-data' size='2em' %}</span>
+                      </a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link {% if request.path == '/employees/profile/' %}active{% endif %}" href="{% url 'employees:profile' %}">
+                        <span role="img" aria-label="User Profile" title="User Profile">{% bs_icon 'person-circle' size='2em' %}</span>
+                      </a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link {% if request.path == '/settings/' %}active{% endif %}" href="{% url 'settings' %}">
+                        <span role="img" aria-label="Settings" title="Settings">{% bs_icon 'gear' size='2em' %}</span>
+                      </a>
+                    </li>
+                    <li>
+                      <form class="logout" action="{% url 'employees:logout' %}" method="POST">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-link">
+                          <span role="img" aria-label="Logout" title="Logout">{% bs_icon 'box-arrow-right' size='2em' %}</span>
+                        </button>
+                      </form>
+                    </li>
+                  </ul>
+            </div>
+            <div class="col col-11">
+                <!-- Main Content  -->
+                {% block content %}
+                {% endblock %}
+            </div>
+        </div>
+    </div>
+    
+
+    <!-- Scripts -->
+    <script src="{% static 'js/main.js' %}"></script>
+</body>
+</html>

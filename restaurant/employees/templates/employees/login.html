@@ -1,0 +1,18 @@
+{% extends 'layout.html' %}
+{% load static %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div class="fs-2 text-light">
+    <h1>Employee Login:</h1>
+    <form class="fs-5" action="{% url 'employees:login' %}" method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">Login</button>
+    </form>
+    <div class="fs-5 m-3 p-3">
+        <p>New Employee <a href="{% url 'employees:register' %}">Registration</a></p>
+    </div>
+</div>
+{% endblock %}

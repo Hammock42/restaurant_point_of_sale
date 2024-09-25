@@ -1,0 +1,78 @@
+{% extends 'layout.html' %}
+
+{% load static %}
+
+{% block title %}Order #{{ order.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-3 text-light bg-secondary rounded">
+    <div class="row">
+        <div class="col col-8">
+            <h2>
+                ORDER #{{ order.id }}:
+            </h2>
+            <table class="table table-borderless text-light rounded">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Price</th>
+                        <th>Quantity</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in order_items %}
+                    <tr>
+                        <td>{{ item.item.name }}</td>
+                        <td>${{ item.item.price }}</td>
+                        <td>x {{ item.quantity }}</td>
+                        <td>${{ item.get_total_price }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="col col-3 p-4">
+            <div class="row px-2">
+                {% for value in payment_values %}
+                <button type="button" class="shadow-lg btn btn-dark btn-lg col col-4 m-1" value="{{ value }}" onclick="addToPayment(event)">&dollar; {{ value }}</button>
+                {% endfor %}
+                <button type="button" class="shadow-lg btn btn-dark btn-lg col col-8 m-1" value="{{ total_price }}" onclick="addToPayment(event)">&dollar; {{ total_price }}</button>
+            </div>
+            <div class="p-1 my-3">
+                <form id="payment-form" action="{% url 'orders:order_receipt' %}" method="post" onsubmit="return validatePayment()">
+                    {% csrf_token %}
+                    <input type="hidden" name="order_id" value="{{ order.id }}">
+                    <input id="payment-amount" name="payment_amount" type="number" placeholder="0.00" step="0.25" class="w-50 rounded p-2" value="0"/>
+                    <button type="submit" class="shadow-lg btn btn-primary btn-lg col col-6 my-1">Pay</button>
+                </form>
+                <div id="payment-warning" class="text-danger" style="display: none;">Payment amount is insufficient!</div>
+            </div>
+        </div>
+    </div>
+    <div>
+        <h3>Total: ${{ total_price }}</h3>
+    </div>
+</div>
+
+<script>
+    function addToPayment(event) {
+        let paymentAmount = document.getElementById('payment-amount');
+        paymentAmount.value = parseFloat(paymentAmount.value) + parseFloat(event.target.value);
+    }
+
+    function validatePayment() {
+        let paymentAmount = parseFloat(document.getElementById('payment-amount').value);
+        let totalPrice = parseFloat("{{ total_price }}");
+
+        if (paymentAmount < totalPrice) {
+            document.getElementById('payment-warning').style.display = 'block';
+            return false;
+        } else {
+            document.getElementById('payment-warning').style.display = 'none';
+            return true;
+        }
+    }
+</script>
+
+{% endblock %}

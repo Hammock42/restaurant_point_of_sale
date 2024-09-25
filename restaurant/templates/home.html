@@ -1,0 +1,43 @@
+{% extends 'layout.html' %}
+{% load static %}
+
+{% block title %}Home{% endblock %}
+{% block content %}
+<div class="container text-light">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="option-box">Option 1</div>
+        </div>
+        <div class="col-md-4">
+            <div class="option-box">Option 2</div>
+        </div>
+        <div class="col-md-4">
+            <div class="option-box">Option 3</div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="option-box">Option 4</div>
+        </div>
+        <div class="col-md-4">
+            <div class="option-box">Option 5</div>
+        </div>
+        <div class="col-md-4">
+            <div class="option-box">Option 6</div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .option-box {
+        border: 1px solid #ccc;
+        padding: 20px;
+        text-align: center;
+        margin: 10px 0;
+        height: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+{% endblock %}

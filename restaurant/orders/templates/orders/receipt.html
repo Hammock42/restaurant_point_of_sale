@@ -1,0 +1,20 @@
+{% extends 'layout.html' %}
+
+{% load static %}
+
+{% block title %}Order #{{ order.id }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div id="receipt" class="col bg-light m-1">
+            <span style="white-space: pre-line">{{receipt}}</span>
+        </div>
+        <div id="kitchen-order" class="col bg-light m-1">
+            <span style="white-space: pre-line">{{ kitchen_order }}</span>
+        </div>
+        
+    </div>
+    <a href="{% url 'items:menu' %}" class="btn btn-primary btn-lg m-3" role="button">Continue</a>
+</div>
+{% endblock %}
